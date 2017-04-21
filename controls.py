@@ -117,8 +117,7 @@ class Controls(object):
                         found_countries.append(country)
                     try:
                         digestible_data[country].append([year, self.num(data[ind])])
-                    except Exception as e:
-                        print e
+                    except:
                         digestible_data[country] = [[year, self.num(data[ind])]]
         return found_countries, digestible_data
 
