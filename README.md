@@ -18,6 +18,8 @@ The dependent variable is currently restricted to *mortality data*, but with the
 
 ## The Regression File
 
+This is the really useful file where all of my work comes from: [VAR](http://statsmodels.sourceforge.net/devel/vector_ar.html#var-p-processes)
+
 The main file is ``` reg.py ``` where all three sources of data are compiled to allow for a compiled VAR. The top of this file is where the model can be changed. 
 
 For example (this is the default currently): 
