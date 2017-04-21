@@ -4,9 +4,19 @@ This is a repository for the Nueva Senior Econ Thesis Seminar. Griffin and Danie
 
 The main use of Python was the implementation of Vector Auto-Regression, a tool to effectively regress time-series data.
 
-## Structure
+# Structure
 
-### Data Components
+## The Component Files
+
+### Controls:
+
+The controls file sorts and retrieves indicators from a massive excel file. Use the indicators at the top of the Controls file  to figure out what key-words can be used to return values.
+
+### Dependent Variable:
+
+The dependent variable is currently restricted to *mortality data*, but with the expension of the project will come more dependent variables to choose from. Mortality Data was chosen because of its sensitivity to fluxuations of malnutrition. In the final regression, if Mortality Data is to be used, there will likely need to be a lag between any food price shock and impact.
+
+## The Regression File
 
 The main file is ``` reg.py ``` where all three sources of data are compiled to allow for a compiled VAR. The top of this file is where the model can be changed. 
 
@@ -24,8 +34,4 @@ While the model only evaluates one country at a time, inputing more than one cou
 COUNTRIES = ['france', "us"]
 CONTROLS = ['nra', 'nra_nch']
 INDEPENDENT_VAR = 'nra_o'
-```
-
-Controls:
-
-The controls file sorts and retrieves indicators from a massive excel file. Use the indicators at the top of the Controls file  to figure out what key-words can be used to return values. 
+``` 
