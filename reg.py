@@ -10,8 +10,7 @@ import matplotlib.pyplot as plt
 # Inputs
 # THIS IS WHERE YOU CAN CHANGE THE MODEL
 COUNTRIES = ['france', "us", "germany", 'brazil', 'canada', 'nigeria', 'greece', 'turkey']
-CONTROLS = ['nra', 'nra_nch', 'nra_covm', 'nps', 'ssr', 'vop_covt', 'pop_urban', 'pop_total', 'ac_prod']
-INDEPENDENT_VAR = 'nra_o'
+INDEPENDENT_VARS = ['nra', 'nra_nch', 'nra_covm', 'nps', 'ssr', 'vop_covt', 'pop_urban', 'pop_total', 'ac_prod']
 # The dependent var is currently forced to be Infant Mortality Data until we find better pov data
 
 
@@ -20,15 +19,13 @@ dependent_var_obj = infantmortality.InfantMortalityData()
 dep_var = dependent_var_obj.get_data(COUNTRIES)
 
 # Loads in the Controls
-controls = controls.Controls()
-control_data = {}
+get_ind_var = controls.Controls()
+ind_var_data = {}
 found_countries = {}
-for control in CONTROLS:
-    c, d = controls.main(COUNTRIES, control, False)
-    control_data[control] = d
-    found_countries[control] = c
-
-found_countries[INDEPENDENT_VAR], ind_var = controls.main(COUNTRIES, INDEPENDENT_VAR, False)
+for var in INDEPENDENT_VARS:
+    c, d = get_ind_var.main(COUNTRIES, var, False)
+    ind_var_data[var] = d
+    found_countries[var] = c
 
 # Imports the Dependent Var
 var_formatted = {}
@@ -39,32 +36,25 @@ for country in dep_var:
         except:
             var_formatted[country] = [([country, yd_tuple[0], yd_tuple[1]])]
 
-# Imports the Independent Var
-for country in ind_var:
-    for yd_tuple in ind_var[country]:
-        if country.capitalize() in var_formatted:
-            for i, tuple1 in enumerate(var_formatted[country.capitalize()]):
-                if yd_tuple[0] == tuple1[1] and country.capitalize() == tuple1[0]:
-                    var_formatted[country.capitalize()][i].append(yd_tuple[1])
-
-# Imports the controls
+# Imports the independent variables
 used_controls = {}
-for control in control_data:
-    for country in control_data[control]:
-        if country.capitalize() in var_formatted:
-            d = control_data[control][country]
-            for datum in d:
-                for i, tuple1 in enumerate(var_formatted[country.capitalize()]):
+for ivar in ind_var_data:
+    for country in ind_var_data[ivar]:  # now we know country and ivar
+        if country.capitalize() in var_formatted:  # if the country is in the good data
+            d = ind_var_data[ivar][country]  # Now we are looking the actual data for the country and ivar
+            for datum in d:  # individual datum
+                for i, tuple1 in enumerate(var_formatted[country.capitalize()]):  # looking at the data tuple
                     if datum[0] == tuple1[1] and country.capitalize() == tuple1[0]:
+                        """print datum, tuple1"""
                         try:
-                            if control not in used_controls[country]:
-                                used_controls[country].append(control)
+                            if ivar not in used_controls[country]:
+                                """print '\n\n#################\n'
+                                print ivar
+                                print '\n################\n\n'"""
+                                used_controls[country].append(ivar)
                         except:
-                            used_controls[country] = [(control)]
+                            used_controls[country] = [(ivar)]
                         var_formatted[country.capitalize()][i].append(datum[1])
-
-
-print used_controls
 
 #  --------------------
 # |                     |
@@ -75,16 +65,17 @@ print used_controls
 # Here is the actual VAR
 for country in var_formatted:
     # These are the columns of the dataframe, will be displayed
-    columns = ['Country', 'Year', 'Dep Var', "Ind Var"]
+    columns = ['Country', 'Year', 'Dep Var']
     try:
         for cont in used_controls[country.lower()]:
-            columns.append('Control: ' + str(cont))
+            columns.append('Ind Var: ' + str(cont))
     except Exception as e:
         print 'Country has no controls'
 
     # Currently, the VAR runs one country at a time, not sure if we want to change that later
     print 'Doing analysis of: ' + country
     # Creates a general dataframe, sorts by year, then removes year
+
     df = pd.DataFrame(data=var_formatted[country], columns=columns)
     df = df.sort(['Year'], ascending=[1])
     years = dates_from_str(df['Year'])
@@ -99,12 +90,21 @@ for country in var_formatted:
     # Regression engine doesn't like columns of only zeros (or constants), this gets rid of those
     for column in df:
         total = 0
+        conse_dupe_counter = 0
+        old_val = 0
         for datum in df[column]:
+            print conse_dupe_counter, [datum, old_val]
+            if datum == old_val:
+                conse_dupe_counter += 1
             total += datum
+            old_val = datum
         col = df[column]
         if total in [0, 0.0,  0.00, col[0], col[0]*len(col), col[0]*len(col)/len(col)]:
             print 'Dropping column: ' + column
             df = df.drop(column, 1)
+        elif conse_dupe_counter > len(df[column])/2:
+            df = df.drop(column, 1)
+            print '\n\n***********\nToo many duplicates in the: ' + column + ' column\n***********\n\n'
 
     print df
     # Does the VAR model!
