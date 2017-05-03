@@ -1,5 +1,6 @@
 import controls
 import infantmortality
+import foodprice
 import pandas as pd
 import numpy as np
 from statsmodels.tsa.base.datetools import dates_from_str
@@ -9,8 +10,11 @@ import matplotlib.pyplot as plt
 
 # Inputs
 # THIS IS WHERE YOU CAN CHANGE THE MODEL
-COUNTRIES = ['france', "us", "germany", 'brazil', 'canada', 'nigeria', 'greece', 'turkey']
-INDEPENDENT_VARS = ['nra', 'nra_nch', 'nra_covm', 'nps', 'ssr', 'vop_covt', 'pop_urban', 'pop_total', 'ac_prod']
+COUNTRIES = ['france', "us", "germany"]
+INDEPENDENT_VARS = ['nra_o', 'nra_i', 'vop_prod', 'cte', 'voc_prod', 'nra_covm', 'nra_covx', 'rra', 'tbi', 'ssr', 'shrimp', 'shrexp', 'pop_rural', 'pop_urban', 'cte_dollar_constant', 'gse_constant', 'gdpdeflator']
+
+# BROKEN VARS:
+# 'er_econ': 7 datapoints
 # The dependent var is currently forced to be Infant Mortality Data until we find better pov data
 
 
@@ -40,6 +44,7 @@ for country in dep_var:
 used_controls = {}
 for ivar in ind_var_data:
     for country in ind_var_data[ivar]:  # now we know country and ivar
+        print ivar, country, len(ind_var_data[ivar][country])
         if country.capitalize() in var_formatted:  # if the country is in the good data
             d = ind_var_data[ivar][country]  # Now we are looking the actual data for the country and ivar
             for datum in d:  # individual datum
@@ -56,6 +61,17 @@ for ivar in ind_var_data:
                             used_controls[country] = [(ivar)]
                         var_formatted[country.capitalize()][i].append(datum[1])
 
+# Loads in the food price data
+food = foodprice.FoodPrice()
+food_data = food.get_data()
+
+for country in var_formatted:
+    for array in var_formatted[country]:
+        for food in food_data:
+            for tupl3 in food_data[food]:
+                if array[1] == tupl3[0]:
+                    array.append(tupl3[1])
+
 #  --------------------
 # |                     |
 # |    !!START HERE!!   |
@@ -68,9 +84,12 @@ for country in var_formatted:
     columns = ['Country', 'Year', 'Dep Var']
     try:
         for cont in used_controls[country.lower()]:
-            columns.append('Ind Var: ' + str(cont))
+            columns.append(str(cont))
     except Exception as e:
         print 'Country has no controls'
+
+    for food in ['Maize', 'Wheat', 'Barley']:
+        columns.append(food)
 
     # Currently, the VAR runs one country at a time, not sure if we want to change that later
     print 'Doing analysis of: ' + country
@@ -93,7 +112,6 @@ for country in var_formatted:
         conse_dupe_counter = 0
         old_val = 0
         for datum in df[column]:
-            print conse_dupe_counter, [datum, old_val]
             if datum == old_val:
                 conse_dupe_counter += 1
             total += datum
@@ -106,13 +124,13 @@ for country in var_formatted:
             df = df.drop(column, 1)
             print '\n\n***********\nToo many duplicates in the: ' + column + ' column\n***********\n\n'
 
-    print df
     # Does the VAR model!
     model = VAR(df)
     # This actually fits the model  results of the model. 1 means VAR to one power (just linear)
     # You can change the number to 2 or 3 if you want a non-linear regression
     # We will have to figure out which gives us the best results and then fudge a reason for it
     results = model.fit(1)
+    print df
     try:
         print results.summary()
     except Exception as e:
@@ -125,5 +143,5 @@ for country in var_formatted:
     # This prints out the cool graphs at the end
     # There is a lot more ways of graphing etc. so we can find better ones these are default
     # If they get annoying you can comment out these last two lines
-    results.plot()
-    plt.show()
+    """results.plot()
+    plt.show()"""
