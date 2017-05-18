@@ -120,6 +120,7 @@ class Controls(object):
             digestible_data[country] = {}
             c_bin = d[country]
             for product in c_bin:
+                print product
                 if product.lower() == 'general':
                     p_bin = c_bin[product]
                     for year, data in p_bin.items():
@@ -131,6 +132,7 @@ class Controls(object):
                             except:
                                 digestible_data[country] = {year: self.num(data[ind])}
                 elif c_bin[product]['2000'][ind] and product.lower() in ['wheat', 'barley', 'maize']:
+                    print 'in the elif: ' + product
                     p_bin = c_bin[product]
                     digestible_data[country][ind + '-' + product.lower()] = {}
                     for year, data in p_bin.items():
@@ -147,7 +149,7 @@ class Controls(object):
         l = lib.lib()
         if display:
             l.display(used_c, digest_d)
-        # print json.dumps(digest_d, sort_keys=True, indent=8)
+        print json.dumps(digest_d, sort_keys=True, indent=8)
         return used_c, digest_d
 
 

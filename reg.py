@@ -11,6 +11,7 @@ import json
 import pickle
 import sys
 
+
 if len(sys.argv) > 1:
     if sys.argv[len(sys.argv)-1].lower() in ['t', 'true', 'y', 'sure', 'force']:
         PICKLE = False
@@ -20,13 +21,24 @@ else:
 
 # Inputs
 # THIS IS WHERE YOU CAN CHANGE THE MODEL
-COUNTRIES = ['argentina']
-INDEPENDENT_VARS = ['nra_o', 'vop_prod', 'cte', 'voc_prod', 'nra_covm', 'nra_covx', 'rra', 'tbi', 'ssr', 'shrimp']  # 'shrexp', 'pop_rural', 'pop_urban', 'cte_dollar_constant', 'gse_constant', 'gdpdeflator'
+COUNTRIES = ['germany']
+INDEPENDENT_VARS = ['rra', 'nra_covm']  # , 'nra_o', 'nra_covm', 'nra_covx', 'rra', 'tbi', 'ssr']  # , 'vop_prod', 'cte', 'voc_prod', 'nra_covm', 'nra_covx', 'rra', 'tbi', 'ssr', 'shrimp', 'shrexp', 'pop_rural', 'pop_urban', 'cte_dollar_constant', 'gse_constant', 'gdpdeflator'
 DEPENDENT_VARS = ['21004', '21022', '21029', '210023']  # '21022', 21029, 210023
 MASTER_DICT = {}
 
 # BROKEN VARS:2
 # 'er_econ': 7 datapoints
+
+"""
+
+THIS MIGHT BE THE FIX FOR THE LINEAR ALGEBRA ERRORS!
+
+when there are data points with very small values in a matrix of normal values, it messes up.
+perhaps design a x1000 for datapoints that are very very small
+
+
+"""
+
 # The dependent var is currently forced to be Infant Mortality Data until we find better pov data
 
 print '\n\nStarting process of extracting data and compiling master dictionary... ' + str(dt.now())
@@ -179,25 +191,25 @@ for country in MASTER_DICT:
                     df.drop([1956+i], 0)"""
 
     df = df.apply(lambda x: x.str.strip() if isinstance(x, str) else x).replace('NaN', np.nan)
-
     df.dropna(axis=0)
-
     final_frame = pd.DataFrame(data=df).dropna()
-    print df
+
+    """for column in final_frame:
+        for i, data_point in enumerate(final_frame[column]):
+            if data_point < .01:
+                final_frame[column][i] = data_point * 1000"""
+
+    print final_frame
     # print np.asarray(final_frame)
     model = VAR(final_frame)
     # This actually fits the model  results of the model. 1 means VAR to one power (just linear)
     # You can change the number to 2 or 3 if you want a non-linear regression
     # We will have to figure out which gives us the best results and then fudge a reason for it
     results = model.fit(1)
-    try:
-        print results.summary()
-    except Exception as e:
-        print e
-        # Sometimes printing the regression fails because of a linear algebra error
-        # Jen Selby suggested that maybe it cant take the second derivative of the matrix
-        # Not sure how we can modify the data to fix this, but maybe we could log everything
-        print 'Random LinAlg error that I can\'t fix!'
+    print results.summary()
+    # Sometimes printing the regression fails because of a linear algebra error
+    # Jen Selby suggested that maybe it cant take the second derivative of the matrix
+    # Not sure how we can modify the data to fix this, but maybe we could log everything
 
     # This prints out the cool graphs at the end
     # There is a lot more ways of graphing etc. so we can find better ones these are default
