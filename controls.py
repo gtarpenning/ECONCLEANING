@@ -1,6 +1,7 @@
 import csv
 import lib
 import numpy as np
+import json
 
 # inputs
 # Pick an indicator from this list:
@@ -58,10 +59,6 @@ gse
 gse_constant
 cte_dollar
 Cte_dollar_constant
-
-nra
-nra_o
-nra_i
 nra_bms
 nra_bms_x
 nra_bms_m
@@ -72,13 +69,22 @@ q
 pd
 pd_us
 Bp
+
+
+
+nra
+nra_o
+nra_i
 vop_prod
 cte
 voc_prod
+
+
+
 """
 
 INDICATOR = 'nra'
-COUNTRIES = ['nigeria', 'us', 'greece', 'turkey']
+COUNTRIES = ['france']
 
 
 class hash(dict):
@@ -102,7 +108,7 @@ class Controls(object):
         data = hash()
         r = csv.DictReader(open('./data/controls.csv', 'r'))
         for row in r:
-            data[row['country']][row['year']] = row
+            data[row['country']][row['prod2']][row['year']] = row
 
         return data
 
@@ -110,15 +116,29 @@ class Controls(object):
         digestible_data = {}
         found_countries = []
         for country in c:
+            country = country.lower()
+            digestible_data[country] = {}
             c_bin = d[country]
-            for year, data in c_bin.items():
-                if data[ind]:
-                    if country not in found_countries:
-                        found_countries.append(country)
-                    try:
-                        digestible_data[country].append([year, self.num(data[ind])])
-                    except:
-                        digestible_data[country] = [[year, self.num(data[ind])]]
+            for product in c_bin:
+                if product.lower() == 'general':
+                    p_bin = c_bin[product]
+                    for year, data in p_bin.items():
+                        if data[ind]:
+                            if country not in found_countries:
+                                found_countries.append(country)
+                            try:
+                                digestible_data[country][year] = self.num(data[ind])
+                            except:
+                                digestible_data[country] = {year: self.num(data[ind])}
+                elif c_bin[product]['2000'][ind] and product.lower() in ['wheat', 'barley', 'maize']:
+                    p_bin = c_bin[product]
+                    digestible_data[country][ind + '-' + product.lower()] = {}
+                    for year, data in p_bin.items():
+                        if data[ind]:
+                            if country not in found_countries:
+                                found_countries.append(country)
+                            digestible_data[country][ind + '-' + product.lower()][year] = self.num(data[ind])
+
         return found_countries, digestible_data
 
     def main(self, target_countries, target_indicators, display):
@@ -127,9 +147,10 @@ class Controls(object):
         l = lib.lib()
         if display:
             l.display(used_c, digest_d)
+        # print json.dumps(digest_d, sort_keys=True, indent=8)
         return used_c, digest_d
 
 
 if __name__ == "__main__":
     welk = Controls()
-    welk.main(COUNTRIES, INDICATOR, True)
+    welk.main(COUNTRIES, INDICATOR, False)

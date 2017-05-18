@@ -14,13 +14,13 @@ class FoodPrice(object):
         data = {}
         with open('./data/foodprice.csv', 'rb') as csvfile:
             reader = csv.DictReader(csvfile)
-            data['Maize'] = []
-            data['Barley'] = []
-            data['Wheat'] = []
+            data['Maize'] = {}
+            data['Barley'] = {}
+            data['Wheat'] = {}
             for row in reader:
-                data['Maize'].append([row['Year'], self.num(row['Maize'])])
-                data['Barley'].append([row['Year'], self.num(row['Barley'])])
-                data['Wheat'].append([row['Year'], self.num(row['Wheat US HRW'])])
+                data['Maize'][row['Year']] = self.num(row['Maize'])
+                data['Barley'][row['Year']] = self.num(row['Barley'])
+                data['Wheat'][row['Year']] = self.num(row['Wheat US HRW'])
 
         return data
 
